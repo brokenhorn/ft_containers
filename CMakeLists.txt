@@ -3,4 +3,4 @@ project(ft_containers)
 
 set(CMAKE_CXX_STANDARD 98)
 
-add_executable(ft_containers main.cpp stack.hpp vector.hpp)
+add_executable(ft_containers main.cpp stack.hpp vector.hpp utility.hpp)

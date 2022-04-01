@@ -2,26 +2,157 @@
 #define VECTOR_HPP
 #include "memory"
 #include "stdexcept"
+#include "utility.hpp"
+
 namespace ft
 {
+
 	template < class T, class Alloc = std::allocator<T> >
 	class vector
 	{
+
+		template<typename L>
+		class RandomAccessIterator
+		{
+		public:
+			typedef typename iterator_traits<L*>::difference_type		difference_type;
+			typedef typename iterator_traits<L*>::value_type			value_type;
+			typedef typename iterator_traits<L*>::pointer				pointer;
+			typedef typename iterator_traits<L*>::reference				reference;
+			typedef typename iterator_traits<L*>::iterator_category		iterator_category;
+
+		private:
+			pointer _ptr;
+
+		public:
+			RandomAccessIterator(): _ptr(){}
+			RandomAccessIterator(pointer p): _ptr(p){}
+			virtual ~RandomAccessIterator(){}
+			RandomAccessIterator(const RandomAccessIterator<typename remove_const<value_type>::type> &src) : _ptr(&(*src)){}
+			RandomAccessIterator<value_type> & operator=(RandomAccessIterator<typename remove_const<value_type>::type> &src)
+			{
+				_ptr = &(*src);
+				return (*this);
+			}
+
+			//math operators
+			RandomAccessIterator & operator++()
+			{
+				_ptr++; //???!
+				return (*this);
+			}
+			RandomAccessIterator  operator++(int)
+			{
+				RandomAccessIterator tmp(*this);
+				_ptr++;
+				return (tmp);
+			}
+			RandomAccessIterator operator+(const difference_type & b) const
+			{
+				return _ptr + b;
+			}
+			RandomAccessIterator & operator+=(const difference_type & b)
+			{
+				_ptr += b;
+				return (*this);
+			}
+			RandomAccessIterator & operator--()
+			{
+				_ptr--;
+				return (*this);
+			}
+			RandomAccessIterator  operator--(int)
+			{
+				RandomAccessIterator tmp(*this);
+				_ptr++;
+				return (tmp);
+			}
+			RandomAccessIterator operator-(const difference_type & b) const
+			{
+				return _ptr - b;
+			}
+			RandomAccessIterator & operator-=(const difference_type & b)
+			{
+				_ptr -= b;
+				return (*this);
+			}
+			reference operator*() const
+			{
+				return (*_ptr);
+			}
+			reference operator->() const
+			{
+				return (_ptr);
+			}
+			reference operator[](difference_type n) const
+			{
+				return *(_ptr + n);
+			}
+		}; // EndOfRAIterator
+
+		//RAIterator comparison op
+	public: //TRY CHANGE ::TEMPLATE
+		template<typename A, typename B>
+		friend bool operator==(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs){
+			return &(*lhs) == &(*rhs);
+		}
+		template<typename A, typename B>
+		friend bool operator!=(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs) {
+			return &(*lhs) != &(*rhs);
+		}
+		template<typename A, typename B>
+		friend bool operator>(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs) {
+			return &(*lhs) > &(*rhs);
+		}
+		template<typename A, typename B>
+		friend bool operator<(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs) {
+			return &(*lhs) < &(*rhs);
+		}
+		template<typename A, typename B>
+		friend bool operator<=(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs) {
+			return &(*lhs) <= &(*rhs);
+		}
+		template<typename A, typename B>
+		friend bool operator>=(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs) {
+			return &(*lhs) >= &(*rhs);
+		}
+		template<typename A, typename B>
+		friend typename vector::template RandomAccessIterator<A>::difference_type operator-(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs){
+			return &(*lhs) - &(*rhs);
+		}
+		template<typename A, typename B>
+		friend typename vector::template RandomAccessIterator<A>::difference_type operator+(const vector::template RandomAccessIterator<A> & lhs, const vector::template RandomAccessIterator<B> & rhs){
+			return &(*lhs) + &(*rhs);
+		}
+		template<typename L>
+		friend vector::template RandomAccessIterator<L> operator +(const typename vector::template RandomAccessIterator<L>::difference_type & a, const vector::template RandomAccessIterator<L> & iter){
+			return	(iter + a);
+		}
+		template<typename L>
+		friend vector::template RandomAccessIterator<L> operator -(const typename vector::template RandomAccessIterator<L>::difference_type & a, const vector::template RandomAccessIterator<L> & iter){
+			return	(iter - a);
+		}
+
 	public:
-		typedef T value_type;
-		typedef Alloc allocator_type;
-		typedef typename allocator_type::reference reference;
-		typedef typename allocator_type::const_reference const_reference;
-		typedef typename allocator_type::pointer pointer;
-		typedef typename allocator_type::const_pointer const_pointer;
-		typedef  std::size_t size_type;//ДОПИСАТЬ
-		//
+		typedef T											value_type;
+		typedef Alloc 										allocator_type;
+		typedef typename allocator_type::reference 			reference;
+		typedef typename allocator_type::const_reference	const_reference;
+		typedef typename allocator_type::pointer 			pointer;
+		typedef typename allocator_type::const_pointer 		const_pointer;
+		typedef  std::size_t 								size_type;
+		typedef  RandomAccessIterator<value_type>			iterator;
+		typedef RandomAccessIterator<const value_type>		const_iterator;
+		//reverse
+
+
 
 	private:
 		pointer _first;
 		size_type _size, _capacity;
 		allocator_type _alloc;
 
+	public:
 		explicit vector (const allocator_type& alloc = allocator_type()): _first(0), _size(0), _capacity(0), _alloc(alloc) {};
 		explicit vector (size_type n, const value_type& val = value_type(),
 						 const allocator_type& alloc = allocator_type()): _size(n), _capacity(n), _alloc(alloc)
@@ -222,7 +353,31 @@ namespace ft
 			_size = 0;
 		}
 		void push_back (const value_type& val)
-		{}
+		{
+			if (_size + 1 > _capacity)
+				reserve(_size + 1);
+			_alloc.construct(_first + _size, val);
+			_size++;
+		}
+		void pop_back()
+		{
+			_alloc.destroy(_first + _size - 1);
+			_size--;
+		}
+		void swap (vector& x)
+		{
+			std::swap(_first, x._first);
+			std::swap(_size, x._size);
+			std::swap(_capacity, x._capacity);
+			std::swap(_alloc, x._alloc);
+		}
+		//Allocator
+		allocator_type get_allocator() const
+		{
+
+			return _alloc;
+		}
+
 	};
 };
 
