@@ -3,6 +3,7 @@
 #include "memory"
 #include "stdexcept"
 #include "utility.hpp"
+#include "reverse_iterator.h"
 
 namespace ft
 {
@@ -140,12 +141,12 @@ namespace ft
 		typedef typename allocator_type::const_reference	const_reference;
 		typedef typename allocator_type::pointer 			pointer;
 		typedef typename allocator_type::const_pointer 		const_pointer;
-		typedef  std::size_t 								size_type;
-		typedef  RandomAccessIterator<value_type>			iterator;
+		typedef std::size_t 								size_type;
+		typedef RandomAccessIterator<value_type>			iterator;
 		typedef RandomAccessIterator<const value_type>		const_iterator;
-		//reverse
-
-
+		typedef reverse_iterator<const_iterator> const_reverse_iterator;
+		typedef reverse_iterator<iterator> reverse_iterator;
+		typedef typename iterator_traits<iterator>::difference_type difference_type;
 
 	private:
 		pointer _first;
@@ -197,6 +198,33 @@ namespace ft
 		vector (const vector& x): _size(0), _capacity(0)
 		{
 			*this = x;
+		}
+		//Iterators:
+		iterator begin()
+		{
+			return iterator(_first);
+		}
+		const_iterator begin() const
+		{
+			return const_iterator(_first);
+		}
+		iterator end(){
+			return (iterator(_first + _size));
+		}
+		const_iterator end() const{
+			return (const_iterator(_first + _size));
+		}
+		reverse_iterator rbegin(){
+			return (reverse_iterator(end()));
+		}
+		const_reverse_iterator rbegin() const{
+			return (const_reverse_iterator(end()));
+		}
+		reverse_iterator rend(){
+			return (reverse_iterator(begin()));
+		}
+		const_reverse_iterator rend() const{
+			return (const_reverse_iterator(begin()));
 		}
 		//CAPACITY
 		size_type size() const
@@ -364,6 +392,52 @@ namespace ft
 			_alloc.destroy(_first + _size - 1);
 			_size--;
 		}
+
+
+		//single element (1)
+		iterator insert (iterator position, const value_type& val)
+		{
+			if (position < begin() || position > end())
+				throw std::logic_error("vector");
+			difference_type start = begin() - position;
+			if (_size == _capacity)
+			{
+				_capacity = _capacity + 1; // MB WRONG
+				pointer new_arr = _alloc.allocate(_capacity);
+				std::uninitialized_copy(begin(), position, iterator(new_arr));
+				_alloc.construct(new_arr + start, val);
+				std::uninitialized_copy(position, end(), iterator(new_arr + start + 1));
+				for (size_t i = 0; i < _size; i++)
+					_alloc.destroy(_first + i);
+				if(_size)
+					_alloc.deallocate(_first, _size);
+				_size++;
+				_first = new_arr;
+			}
+			else
+			{
+				for (size_type i = _size; i > static_cast<size_type>(start); i--)
+				{
+					_alloc.destroy(_first + i);
+					_alloc.construct(_first + i, *(_first + i - 1));
+				}
+				_alloc.destroy(&(*position));
+				_alloc.construct(&(*position), val);
+				_size++;
+			}
+			return (begin() + start);
+		}
+		//fill (2)
+		void insert (iterator position, size_type n, const value_type& val)
+		{
+			if (n == 0)
+				return;
+			//
+		}
+	//	range (3)
+		template <class InputIterator>
+		void insert (iterator position, InputIterator first, InputIterator last);
+
 		void swap (vector& x)
 		{
 			std::swap(_first, x._first);
@@ -379,6 +453,15 @@ namespace ft
 		}
 
 	};
+
+	namespace std
+	{
+		template<class T, class A>
+		void swap(ft::vector<T, A> & lhs, ft::vector<T, A> & rhs)
+		{
+			lhs.swap(rhs);
+		}
+	}
 };
 
 #endif
