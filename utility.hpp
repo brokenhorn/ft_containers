@@ -50,5 +50,60 @@ namespace ft
 		typedef const T& 						reference;
 		typedef std::random_access_iterator_tag iterator_category;
 	};
+
+	template< class T, T v >
+	struct integral_constant
+	{
+		typedef T value_type;
+		typedef integral_constant type;
+		static const bool value = v;
+		operator value_type() const { return value; }
+	};
+
+	template< class T > struct is_integral : public ft::integral_constant<T, false>{};
+
+	template<> 			struct is_integral<bool> 				: public ft::integral_constant<bool, true>{};
+	template<> 			struct is_integral<char>				: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<signed char>			: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<unsigned char>		: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<wchar_t>				: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<char16_t>			: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<short>				: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<unsigned short>		: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<int>					: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<unsigned int>		: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<long>				: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<unsigned long> 		: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<long long>			: public ft::integral_constant<bool, true> {};
+	template<> 			struct is_integral<unsigned long long>	: public ft::integral_constant<bool, true> {};
+
+
+	//default (1)
+	template <class InputIterator1, class InputIterator2>
+	bool lexicographical_compare (InputIterator1 first1, InputIterator1 last1,
+								  InputIterator2 first2, InputIterator2 last2)
+	{
+		while (first1!=last1)
+		{
+			if (first2==last2 || *first2<*first1) return false;
+			else if (*first1<*first2) return true;
+			++first1; ++first2;
+		}
+		return (first2!=last2);
+	}
+	//custom (2) MAYBE WRONG
+	template <class InputIterator1, class InputIterator2, class Compare>
+	bool lexicographical_compare (InputIterator1 first1, InputIterator1 last1,
+								  InputIterator2 first2, InputIterator2 last2,
+								  Compare comp)
+	{
+		while (first1!=last1)
+		{
+			if (comp(*first1, *first2)) return true;
+			else if (!comp(*first1, *first2)) return false;
+			++first1; ++first2;
+		}
+		return (first2!=last2);
+	}
 }
 #endif
