@@ -96,7 +96,8 @@ private:
 			if (!is_nil(root->left))
 				return (_insert_to_node(root->left, new_node));
 			root->left = new_node;
-		} else
+		}
+		else
 		{
 			if (!is_nil(root->right))
 				return (_insert_to_node(root->right, new_node));
@@ -106,7 +107,170 @@ private:
 		return (new_node);
 	}
 
-	node_pointer _insert_into_tree
+	node_pointer _insert_into_tree(node_pointer new_node, node_pointer where)
+	{
+		if (_root == _header)
+			_root = new_node;
+		else
+			_insert_to_node(where, new_node);
+		return (new_node);
+	}
+
+	void _insert_fixup(node_pointer node)
+	{
+		if (node != _root && node->parent != _root){
+			while (node != _root && !node->parent->is_black){
+				if (node->parent == node->parent->parent->left){
+					node_pointer uncle = node->parent->parent->right;
+					if (!uncle->is_black){
+						node->parent->is_black = true;
+						uncle->is_black = true;
+						node->parent->parent->is_black = false;
+						node = node->parent->parent;
+					}
+					else {
+						if (node == node->parent->right){
+							node = node->parent;
+							_rotate_left(node);
+						}
+						node->parent->is_black = true;
+						node->parent->parent->is_black = false;
+						_rotate_right(node->parent->parent);
+					}
+				}
+				else{
+					node_pointer uncle = node->parent->parent->left;
+					if (!uncle->is_black){
+						node->parent->is_black = true;
+						uncle->is_black = true;
+						node->parent->parent->is_black = false;
+						node = node->parent->parent;
+					}
+					else{
+						if (node == node->parent->left){
+							node = node->parent;
+							_rotate_right(node);
+						}
+						node->parent->is_black = true;
+						node->parent->parent->is_black = false;
+						_rotate_left(node->parent->parent);
+					}
+				}
+			}
+		}
+		_root->is_black = true;
+	}
+
+	bool is_nil(node_pointer node) const
+	{
+		return node == _nil || node == _header;
+	}
+
+	void clear_node(node_pointer node)
+	{
+		if (node && !is_nil(node))
+		{
+			clear_node(node->right);
+			clear_node(node->left);
+			_val_alloc.destroy(node->value, 1);
+			_val_alloc.deallocate(node->value, 1);
+			_node_alloc.deallocate(node, 1);
+		}
+	}
+
+	void	init_nil_head()
+	{
+		_nil = _node_alloc.allocate(1);
+		_node_alloc.construct(_nil, Node<Value>());
+		_nil->is_black = true;
+		_nil->is_nil = true;
+		_header = _node_alloc.allocate(1);
+		_node_alloc.construct(_header, Node<Value>());
+		_header->value = _val_alloc.allocate(1);
+		_val_alloc.construct(_header->value, Value());
+		_header->is_black = true;
+	}
+
+	void transplant(node_pointer where, node_pointer what)
+	{
+		if (where == _root)
+			_root = what;
+		else if (where == where->parent->left)
+			where->parent->left = what;
+		else
+			where->parent->right = what;
+		what->parent = where->parent;
+	}
+
+	void free_node(node_pointer node)
+	{
+		_val_alloc.destroy(node->value);
+		_val_alloc.deallocate(node->value, 1);
+		_node_alloc.deallocate(node, 1);
+	}
+
+public:
+	iterator end()
+	{
+		return (iterator(_header));
+	}
+
+	const_iterator end() const
+	{
+		return const_iterator(_header);
+	}
+
+	iterator begin()
+	{
+		(iterator(_size == 0 ? _header : iterator(tree_min(_root))));
+	}
+
+	const_iterator begin() const
+	{
+		return(const_iterator(_size == 0 ? _header : const_iterator(tree_min(_root))));
+	}
+
+	reverse_iterator rbegin()
+	{
+		return (reverse_iterator(end()));
+	}
+
+	const_reverse_iterator rbegin() const
+	{
+		return (const_reverse_iterator(end()));
+	}
+
+	reverse_iterator rend()
+	{
+		return (reverse_iterator(begin()));
+	}
+
+	const_reverse_iterator rend() const
+	{
+		return (const_reverse_iterator(begin()));
+	}
+
+	pointer create_value(const value_type &value)
+	{
+		pointer new_val = _val_alloc.allocate(1);
+		_val_alloc.construct(new_val, value);
+		return (new_val);
+	}
+
+	node_pointer copy_node(node_pointer other)
+	{
+		node_pointer new_node = _node_alloc.allocate(1);
+		_node_alloc.construct(new_node, Node<Value>());
+		new_node->is_black = other->is_black;
+		new_node->is_nil = other->is_nil;
+		if (other->value){
+			new_node->value = _val_alloc.allocate(1);
+			_val_alloc.construct(new_node->value, *other->value);
+		}
+		return (new_node);
+	}
+
+
 };
 
 #endif
